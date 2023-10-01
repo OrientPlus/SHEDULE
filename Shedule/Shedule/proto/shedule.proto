@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package schedule;
+
+message ScheduleRequest1 {
+    string group 	= 1;
+    int32 day_of_week 	= 2;
+}
+
+message ScheduleRequest2 {
+    string group 	= 1;
+}
+
+message OperationStatus {
+    bool error_flag	= 1;
+    string error	= 2;
+}
+
+message ScheduleInfo {
+    string group 	= 1;
+    string audit 	= 2;
+    string start_time 	= 3;
+    string end_time 	= 4;
+    string lesson_name 	= 5;
+    bool parity 	= 6;
+    int32 day_of_week 	= 7;
+    int32 lesson_count 	= 8;
+}
+
+message ScheduleInfoContainer {
+    repeated ScheduleInfo schedule_container = 1;
+}
+
+service ScheduleService {
+    rpc GetSchedule (ScheduleRequest1) returns (ScheduleInfo);
+    rpc GetScheduleForWeek (ScheduleRequest2) returns (ScheduleInfoContainer);
+    
+    rpc SetSchedule (ScheduleInfo) returns (OperationStatus);
+    rpc SetScheduleForWeek (ScheduleInfoContainer) returns (OperationStatus);
+}
