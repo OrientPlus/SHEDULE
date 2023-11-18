@@ -24,27 +24,27 @@
     <ClCompile Include="source.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="proto\shedule.grpc.pb.cc">
-      <Filter>proto</Filter>
-    </ClCompile>
-    <ClCompile Include="proto\shedule.pb.cc">
-      <Filter>proto</Filter>
-    </ClCompile>
     <ClCompile Include="source.hpp">
       <Filter>Файлы заголовков</Filter>
     </ClCompile>
     <ClCompile Include="database.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="proto\schedule.grpc.pb.cc">
+      <Filter>proto</Filter>
+    </ClCompile>
+    <ClCompile Include="proto\schedule.pb.cc">
+      <Filter>proto</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="database.hpp">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="proto\shedule.grpc.pb.h">
+    <ClInclude Include="proto\schedule.grpc.pb.h">
       <Filter>proto</Filter>
     </ClInclude>
-    <ClInclude Include="proto\shedule.pb.h">
+    <ClInclude Include="proto\schedule.pb.h">
       <Filter>proto</Filter>
     </ClInclude>
   </ItemGroup>

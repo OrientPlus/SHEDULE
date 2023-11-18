@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package schedule;
+
+service ScheduleService {
+  rpc GetSchedule(ScheduleRequest) returns (ScheduleResponse) {}
+}
+
+message ScheduleRequest {
+  string group = 1;
+}
+
+message ScheduleResponse {
+  repeated Day oddWeek  = 1;
+  repeated Day evenWeek = 2;
+}
+
+message Day {
+  int32 weekday             = 1;
+  repeated Subject subjects = 2;
+}
+
+message Subject {
+  enum SubjectType {
+    LECTURE  = 0;
+    PRACTICE = 1;
+    LAB      = 2;
+  }
+
+  string      name      = 1;
+  string      room      = 2;
+  SubjectType type      = 3;
+  Lecturer    lecturer  = 4;
+  int32       number    = 5;
+  TimeRange   timeRange = 6;
+}
+
+message Lecturer {
+  string firstName  = 1;
+  string lastName   = 2;
+  string middleName = 3;
+}
+
+message TimeRange {
+  TimeOfDay start = 1;
+  TimeOfDay end   = 2;
+}
+
+message TimeOfDay {
+  int32 hour   = 1;
+  int32 minute = 2;
+}

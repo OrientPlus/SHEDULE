@@ -1,13 +1,16 @@
 #include "source.hpp"
 
 
-// ===== Shedule =====
+// ===== Subject =====
 // mk401
 // нечетная
 // -- lesson --
 //		421
-//		13:15
+//		13:15 - 14:45
 //		Java language
+//      Ivan Ivanovich Ivanov
+//      Matanaliz
+//      
 // 
 // ---- Входные данные
 // group(MK401), audit(421), lesson_name(Java language), 
@@ -15,37 +18,32 @@
 
 
 
-int Server::SetShedule(const vector<Shedule> sh_box)
+void ScheduleServer::run(string address)
 {
+    grpc::ServerBuilder builder;
+    builder.AddListeningPort(address, grpc::InsecureServerCredentials());
+    builder.RegisterService(this);
 
-	return 0;
-}
+    std::unique_ptr<grpc::ServerCompletionQueue> cq = builder.AddCompletionQueue(); // Создание CompletionQueue через ServerBuilder
+    std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
+    std::cout << "Server listening on " << address << endl;
 
-int Server::SetShedule(const Shedule& sh)
-{
-	// insert into lesso(numb, start, end, name, day_of_week, week_numb) values(1, 13:15, 14 : 45, 'java languge', 1, 1);
-	// insert into groups(name) values(MK401);
-	// inset into audit(aud_num) values(421);
+    // Обработка запросов в асинхронном режиме
+    void* tag;
+    bool ok;
+    try
+    {
+        while (true) {
+            if (!cq->Next(&tag, &ok)) {
+                cout << "Error in forming the response!" << endl;
+            }
+        }
+    }
+    catch (std::exception& ex)
+    {
+        cerr << "Exception caught: " << ex.what() << endl << "The server will be stopped!" << endl;
+    }
 
-
-
-	return 0;
-}
-
-int Server::GetSheduleForWeek(Group& gr)
-{
-	// select  'all'
-	//	from schedule s
-	//	join groups g on s.group_id = g.id
-	//	join lesson l on s.lesson_id = l.id
-	//	join audit a on s.audit_id = a.id
-	// where g.name = group, lesson.week_numb = week_numb, lesson.day_of_week = day_of_week;
-	
-	
-	return 0;
-}
-
-int Server::GetSheduleForDay(vector<Group>& gr)
-{
-	return 0;
+    server->Shutdown();
+    cq->Shutdown();
 }

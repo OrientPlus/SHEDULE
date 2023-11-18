@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-#include <map>
+#include <set>
 
 
 using std::string;
@@ -12,100 +12,73 @@ using std::vector;
 using std::cout;
 using std::cerr;
 using std::endl;
+using std::set;
+using std::pair;
+
+enum Group { none = 0, MK101, MK102, MN101, MN102, MP101, MT101, MT102, MT103 };
+enum Week { ODD = 1, EVEN };
 
 
-enum Group {MK101, MK102, MN101, MN102, MP101, MT101, MT102, MT103};
-enum Week {EVEN, ODD};
 
-struct LessonTime
+
+struct TimeOfDay
 {
-	// Number of seconds since 0:00
-	unsigned long long start;
-
-	string GetStartTime()
-	{
-		int h_start = start / 60 / 60,
-			m_start = (start / 60) % 60;
-
-		string time = to_string(h_start);
-		time += ":" + to_string(m_start);
-
-		return time;
-	};
-
-	string GetEndTime()
-	{
-		unsigned long long hours = (start+5400) / 60 / 60,
-			minuts = ((start+5400) / 60) % 60;
-		
-		string time = to_string(hours);
-		time += ":" + to_string(minuts);
-
-		return time;
-	};
-
-	// format: 13:15 like (int)1315
-	void SetTime(string start_time)
-	{
-		string temp = start_time.substr(0, 2);
-		start = stoi(temp) * 60 * 60;
-		temp = start_time.substr(3, 2);
-		start += stoi(temp) * 60;
-
-		return;
-	}
+	int hour;
+	int minut;
 };
 
-struct Lesson
+struct TimeRange
 {
-	string audit;
-	LessonTime time;
+	TimeOfDay start;
+	TimeOfDay end;
+};
+
+struct Lecturer
+{
+	string first_name;
+	string last_name;
+	string middle_name;
+};
+
+struct Subject {
+	enum SubjectType { LECTURE = 0, PRACTICE, LAB };
 	string name;
-	int numb;
-	int day_of_week;
-	Week week;
+	string room;
+	int number;
+	SubjectType s_type;
+	Lecturer lecturer;
+	TimeRange time_range;
 };
 
 
-// Расписание одной группы на одни день 
-struct Shedule
+struct Day
 {
-	Group group;
-	vector<Lesson> lessons;
+	int weekday;
+	vector<Subject> subjects;
 };
 
 
-class Server {
+class DataBase {
 public:
-	Server()
+	DataBase()
 	{
 
 	};
-	~Server()
+	~DataBase()
 	{
 
 	};
-	
+
+	vector<Day> getSchedule(string group, Week week)
+	{
+		return vector<Day>();
+	}
 
 private:
-	// Response_1 возвращает контейнер структур расписания на всю неделю
-	// void Response_1();
-
-	// Response_2 возвращает структуру расписания на один день
-	// void Response_2();
-
 	
 	//-----------------------------------------------
 	//		Методы работы с БД PostgreSQL
 	//
-
-	// Получить расписание для группы
-	int GetSheduleForWeek(Group& gr);
-	int GetSheduleForDay(vector<Group>& gr);
-
-	// Добавить запись в расписание 
-	int SetShedule(const Shedule& sh);
-	int SetShedule(const vector<Shedule> sh_box);
 
 	
 };

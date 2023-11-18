@@ -1,12 +1,18 @@
-#include <grpcpp/grpcpp.h>
-#include "proto/shedule.grpc.pb.h"
-
+#pragma once
 
 #include <iostream>
 #include <algorithm>
 #include <string>
 #include <vector>
 #include <map>
+#include <thread>
+
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/completion_queue.h>
+#include "proto/schedule.grpc.pb.h"
+
+#include "database.hpp"
 
 
 
@@ -18,130 +24,102 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
-enum Group { MK101, MK102, MN101, MN102, MP101, MT101, MT102, MT103 };
-enum Week { EVEN, ODD };
-
-struct LessonTime
-{
-    // Number of seconds since 0:00
-    unsigned long long start;
-
-    string GetStartTime()
-    {
-        int h_start = start / 60 / 60,
-            m_start = (start / 60) % 60;
-
-        string time = to_string(h_start);
-        time += ":" + to_string(m_start);
-
-        return time;
-    };
-
-    string GetEndTime()
-    {
-        unsigned long long hours = (start + 5400) / 60 / 60,
-            minuts = ((start + 5400) / 60) % 60;
-
-        string time = to_string(hours);
-        time += ":" + to_string(minuts);
-
-        return time;
-    };
-
-    // format: 13:15 like (int)1315
-    void SetTime(string start_time)
-    {
-        string temp = start_time.substr(0, 2);
-        start = stoi(temp) * 60 * 60;
-        temp = start_time.substr(3, 2);
-        start += stoi(temp) * 60;
-
-        return;
-    }
-};
-
-struct Lesson
-{
-    string audit;
-    LessonTime time;
-    string name;
-    int numb;
-    int day_of_week;
-    Week week;
-};
 
 
-// Расписание одной группы на одни день 
-struct Schedule
-{
-    Group group;
-    vector<Lesson> lessons;
-};
-
-
-class ScheduleServer final : public schedule::ScheduleService::Service 
+class ScheduleServer final : public schedule::SheduleService::Service
 {
 public:
-    grpc::Status GetSchedule(grpc::ServerContext* context, const schedule::ScheduleRequest1* request, schedule::ScheduleInfo* response) override {
-        // Реализуйте логику получения расписания на основе request и заполните response.
-        // Пример:
-        response->set_group(request->group());
-        response->set_audit("101");
-        response->set_start_time("9:00 AM");
-        response->set_end_time("10:30 AM");
-        response->set_lesson_name("Math");
-        response->set_parity(false);
-        response->set_day_of_week(request->day_of_week());
-        response->set_lesson_count(1);
+    grpc::Status GetSchedule(grpc::ServerContext* context, const schedule::ScheduleRequest* request, schedule::ScheduleResponse* response) override
+    {
+        // Добавляем 
+        vector<Day> even_week = db.getSchedule(request->group(), Week::EVEN);
+        for (auto it : even_week)
+        {
+            // Добавляем день для нечетной недели
+            schedule::Day* day = response->add_evenweek();
+            day->set_weekday(it.weekday);
+
+            // Добавляем предмет
+            for (auto subj_it : it.subjects)
+            {
+                schedule::Subject* subj = day->add_subjects();
+                subj->set_name(subj_it.name);
+                subj->set_number(subj_it.number);
+                subj->set_room(subj_it.room);
+
+                Subject::SubjectType st = subj_it.s_type;
+                subj->set_type(schedule::Subject_SubjectType(st));
+
+                // Добавляем преподавателя
+                schedule::Lecturer* lec = subj->mutable_lecturer();
+                lec->set_firstname(subj_it.lecturer.first_name);
+                lec->set_lastname(subj_it.lecturer.last_name);
+                lec->set_middlename(subj_it.lecturer.middle_name);
+                subj->set_allocated_lecturer(lec);
+
+                // Добавляем временной промежуток предмета
+                schedule::TimeRange* tr = subj->mutable_timerange();
+                // Добавляем TimeOfDay поля для временного промежутка
+                schedule::TimeOfDay *time_of_day_start = tr->mutable_start();
+                schedule::TimeOfDay* time_of_day_end = tr->mutable_end();
+                time_of_day_start->set_hour(subj_it.time_range.start.hour);
+                time_of_day_start->set_minut(subj_it.time_range.start.minut);
+                time_of_day_end->set_hour(subj_it.time_range.end.hour);
+                time_of_day_end->set_minut(subj_it.time_range.end.minut);
+                tr->set_allocated_start(time_of_day_start);
+                tr->set_allocated_end(time_of_day_end);
+                subj->set_allocated_timerange(tr);
+            }
+        }
+
+        vector<Day> odd_week = db.getSchedule(request->group(), Week::ODD);
+        for (auto it : odd_week)
+        {
+            // Добавляем день для четной недели
+            schedule::Day* day = response->add_oddweek();
+            day->set_weekday(it.weekday);
+
+            // Добавляем предмет
+            for (auto subj_it : it.subjects)
+            {
+                schedule::Subject* subj = day->add_subjects();
+                subj->set_name(subj_it.name);
+                subj->set_number(subj_it.number);
+                subj->set_room(subj_it.room);
+
+                Subject::SubjectType st = subj_it.s_type;
+                subj->set_type(schedule::Subject_SubjectType(st));
+
+                // Добавляем преподавателя
+                schedule::Lecturer* lec = subj->mutable_lecturer();
+                lec->set_firstname(subj_it.lecturer.first_name);
+                lec->set_lastname(subj_it.lecturer.last_name);
+                lec->set_middlename(subj_it.lecturer.middle_name);
+                subj->set_allocated_lecturer(lec);
+
+                // Добавляем временной промежуток предмета
+                schedule::TimeRange* tr = subj->mutable_timerange();
+                // Добавляем TimeOfDay поля для временного промежутка
+                schedule::TimeOfDay* time_of_day_start = tr->mutable_start();
+                schedule::TimeOfDay* time_of_day_end = tr->mutable_end();
+                time_of_day_start->set_hour(subj_it.time_range.start.hour);
+                time_of_day_start->set_minut(subj_it.time_range.start.minut);
+                time_of_day_end->set_hour(subj_it.time_range.end.hour);
+                time_of_day_end->set_minut(subj_it.time_range.end.minut);
+                tr->set_allocated_start(time_of_day_start);
+                tr->set_allocated_end(time_of_day_end);
+                subj->set_allocated_timerange(tr);
+            }
+        }
+
 
         return grpc::Status::OK;
     }
 
-    grpc::Status GetScheduleForWeek(grpc::ServerContext* context, const schedule::ScheduleRequest2* request, schedule::ScheduleInfoContainer* response) override {
-        // Реализуйте логику получения расписания на неделю на основе request и заполните response.
-        // Пример:
-
-        schedule::ScheduleInfo* schedule = response->add_schedule_container();
-        schedule->set_group(request->group());
-        schedule->set_audit("101");
-        schedule->set_start_time("9:00 AM");
-        schedule->set_end_time("10:30 AM");
-        schedule->set_lesson_name("Math");
-        schedule->set_parity(false);
-        schedule->set_day_of_week(1);
-        schedule->set_lesson_count(1);
-        // Добавьте больше элементов, если необходимо.
-
-        return grpc::Status::OK;
-    }
-
-    grpc::Status SetSchedule(grpc::ServerContext* context, const schedule::ScheduleInfo* request, schedule::OperationStatus* response) override {
-        // Реализуйте логику установки расписания на основе request и установите response.success в true,
-        // если операция выполнена успешно, или в false, если есть ошибки.
-        // Пример:
-        // Ваш код установки расписания здесь.
-
-        Schedule 
-
-        response->set_error_flag(false); // Успешно установлено
-        response->set_error("");
-
-        return grpc::Status::OK;
-    }
-
-    grpc::Status SetScheduleForWeek(grpc::ServerContext* context, const schedule::ScheduleInfoContainer* request, schedule::OperationStatus* response) override {
-        // Реализуйте логику установки расписания на неделю на основе request и установите response.success в true,
-        // если операция выполнена успешно, или в false, если есть ошибки.
-        // Пример:
-        // Ваш код установки расписания на неделю здесь.
-
-        response->set_error_flag(false); // Успешно установлено
-        response->set_error("");
-
-        return grpc::Status::OK;
-    }
+    // "0.0.0.0:1010"
+    void run(string address);
 
 
 private:
-    
+    DataBase db;
 };
