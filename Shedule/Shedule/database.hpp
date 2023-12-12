@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <SQLiteCpp/SQLiteCpp.h>
 
 
 using std::string;
@@ -57,17 +58,33 @@ struct Day
 	vector<Subject> subjects;
 };
 
+struct Lesson {
+	string name;
+	unsigned number;
+	unsigned week_num;
+	unsigned day_of_week;
+	unsigned type;
+	unsigned audit_id;
+	unsigned lecturer_id;
+};
+
 
 class DataBase {
 public:
-	DataBase()
-	{
+	DataBase(const string& db_name);
 
-	};
 	~DataBase()
 	{
 
 	};
+
+	void insertData(const vector<Day>& l_d, Group group);
+
+	void insertLecturers(const vector<Lecturer>& l_v);
+	void insertAudits(const vector<string>& l_a);
+	void insertLessons(const vector<Lesson>& l_l);
+	void insertGroups(const vector<string>& l_gr);
+	void insertGenereal();
 
 	vector<Day> getSchedule(string group, Week week)
 	{
@@ -75,10 +92,11 @@ public:
 	}
 
 private:
-	
+	SQLite::Database db;
 	//-----------------------------------------------
-	//		Методы работы с БД PostgreSQL
+	//		РњРµС‚РѕРґС‹ СЂР°Р±РѕС‚С‹ СЃ Р‘Р” PostgreSQL
 	//
 
+	vector<Day> getSchedule2(string group, Week week);
 	
 };
